@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting.Internal;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -31,7 +31,8 @@ namespace Kestrel
     {
         private WebSocketMiddleware wsMiddleware;
 
-        public Application() {
+        public Application()
+        {
             var wsOptions = new WebSocketOptions();
             wsMiddleware = new WebSocketMiddleware(continueRequest, new OptionsWrapper<WebSocketOptions>(wsOptions));
         }
@@ -51,7 +52,8 @@ namespace Kestrel
             await wsMiddleware.Invoke(httpContext);
         }
 
-        private async Task continueRequest(HttpContext httpContext) {
+        private async Task continueRequest(HttpContext httpContext)
+        {
             if (httpContext.WebSockets.IsWebSocketRequest)
             {
                 var socket = await httpContext.WebSockets.AcceptWebSocketAsync();
@@ -69,6 +71,28 @@ namespace Kestrel
         }
     }
 
+    class ApplicationLifetime : IApplicationLifetime
+    {
+        private readonly CancellationTokenSource startedSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource stoppingSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource stoppedSource = new CancellationTokenSource();
+
+        public CancellationToken ApplicationStarted => startedSource.Token;
+
+        public CancellationToken ApplicationStopping => stoppingSource.Token;
+
+        public CancellationToken ApplicationStopped => stoppedSource.Token;
+
+        public void StopApplication()
+        {
+            lock (stoppingSource)
+            {
+                if (!stoppingSource.Token.IsCancellationRequested)
+                    stoppingSource.Cancel(throwOnFirstException: false);
+            }
+        }
+    }
+
     class Program
     {
         static async Task Main(string[] args)
@@ -77,10 +101,8 @@ namespace Kestrel
             serverOptions.ListenAnyIP(8080);
 
             var transportOptions = new SocketTransportOptions();
-
             var loggerFactory = new NullLoggerFactory();
-            var lifetimeLogger = new NullLogger<ApplicationLifetime>();
-            var applicationLifetime = new ApplicationLifetime(lifetimeLogger);
+            var applicationLifetime = new ApplicationLifetime();
 
             var transportFactory = new SocketTransportFactory(
                 new OptionsWrapper<SocketTransportOptions>(transportOptions), applicationLifetime, loggerFactory);
