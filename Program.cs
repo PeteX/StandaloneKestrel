@@ -9,8 +9,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv;
-using Microsoft.AspNetCore.Server.Kestrel.Transport.Libuv.Internal;
+using Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -77,14 +76,14 @@ namespace Kestrel
             var serverOptions = new KestrelServerOptions();
             serverOptions.ListenAnyIP(8080);
 
-            var uvOptions = new LibuvTransportOptions();
+            var transportOptions = new SocketTransportOptions();
 
             var loggerFactory = new NullLoggerFactory();
             var lifetimeLogger = new NullLogger<ApplicationLifetime>();
             var applicationLifetime = new ApplicationLifetime(lifetimeLogger);
 
-            var transportFactory = new LibuvTransportFactory(
-                new OptionsWrapper<LibuvTransportOptions>(uvOptions), applicationLifetime, loggerFactory);
+            var transportFactory = new SocketTransportFactory(
+                new OptionsWrapper<SocketTransportOptions>(transportOptions), applicationLifetime, loggerFactory);
 
             using (var server = new KestrelServer(new OptionsWrapper<KestrelServerOptions>(serverOptions),
                 transportFactory, loggerFactory))
