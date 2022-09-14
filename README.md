@@ -9,6 +9,4 @@ I wrote this code because I was curious to see if it could be done, but it may b
 
 ---
 
-In July 2022, GitHub notified me of vulnerabilities in this repository's dependencies.  I accepted their automated patches, but I no longer have .NET Core 2.1 installed, so it's difficult to test the result.  Hopefully it will still work, but you may encounter difficulties.
-
-.NET Core 2.1 reached end of life in August 2021.  Because of this, you should not expect to be able to create secure applications based on this repository.
+This project was originally developed for .NET Core 2.1, but has now been updated for .NET 6.  The update allowed one of the classes to be removed, simplifying the project significantly.  Unfortunately, the Kestrel package is no longer published on its own, so it now has to depend on `Microsoft.NET.Sdk.Web` rather than `Microsoft.NET.Sdk`.
