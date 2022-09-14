@@ -83,6 +83,6 @@ class Program
             new OptionsWrapper<KestrelServerOptions>(serverOptions), transportFactory, loggerFactory);
 
         await server.StartAsync(new Application(loggerFactory), CancellationToken.None);
-        Console.ReadLine();
+        await Task.Delay(Timeout.Infinite);
     }
 }

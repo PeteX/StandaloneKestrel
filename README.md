@@ -5,7 +5,12 @@ This project demonstrates how to run Kestrel without ASP.NET.  It creates a web 
 
 It also demonstrates how to add the websocket middleware.  If you connect to ws://localhost:8080 (with wscat, for example) it will again respond with "hello world".  This time it will be sent as a textual websocket message.
 
-I wrote this code because I was curious to see if it could be done, but it may be interesting for someone.  It uses significantly less memory than ASP.NET.
+I wrote this code because I was curious to see if it could be done, but it may be interesting for someone.  It uses significantly less memory than ASP.NET.  Startup time is a bit lower too, about 180ms on my system.  On a Linux system, you can measure it like this:
+
+```
+dotnet publish -c Release
+time ./time-startup
+```
 
 ---
 
