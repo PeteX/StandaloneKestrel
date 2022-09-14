@@ -4,13 +4,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets;
 using Microsoft.AspNetCore.WebSockets;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -31,10 +31,11 @@ namespace Kestrel
     {
         private WebSocketMiddleware wsMiddleware;
 
-        public Application()
+        public Application(ILoggerFactory loggerFactory)
         {
             var wsOptions = new WebSocketOptions();
-            wsMiddleware = new WebSocketMiddleware(continueRequest, new OptionsWrapper<WebSocketOptions>(wsOptions));
+            wsMiddleware = new WebSocketMiddleware(continueRequest, new OptionsWrapper<WebSocketOptions>(wsOptions),
+                loggerFactory);
         }
 
         public Context CreateContext(IFeatureCollection contextFeatures)
@@ -71,28 +72,6 @@ namespace Kestrel
         }
     }
 
-    class ApplicationLifetime : IApplicationLifetime
-    {
-        private readonly CancellationTokenSource startedSource = new CancellationTokenSource();
-        private readonly CancellationTokenSource stoppingSource = new CancellationTokenSource();
-        private readonly CancellationTokenSource stoppedSource = new CancellationTokenSource();
-
-        public CancellationToken ApplicationStarted => startedSource.Token;
-
-        public CancellationToken ApplicationStopping => stoppingSource.Token;
-
-        public CancellationToken ApplicationStopped => stoppedSource.Token;
-
-        public void StopApplication()
-        {
-            lock (stoppingSource)
-            {
-                if (!stoppingSource.Token.IsCancellationRequested)
-                    stoppingSource.Cancel(throwOnFirstException: false);
-            }
-        }
-    }
-
     class Program
     {
         static async Task Main(string[] args)
@@ -102,15 +81,14 @@ namespace Kestrel
 
             var transportOptions = new SocketTransportOptions();
             var loggerFactory = new NullLoggerFactory();
-            var applicationLifetime = new ApplicationLifetime();
 
             var transportFactory = new SocketTransportFactory(
-                new OptionsWrapper<SocketTransportOptions>(transportOptions), applicationLifetime, loggerFactory);
+                new OptionsWrapper<SocketTransportOptions>(transportOptions), loggerFactory);
 
             using (var server = new KestrelServer(new OptionsWrapper<KestrelServerOptions>(serverOptions),
                 transportFactory, loggerFactory))
             {
-                await server.StartAsync(new Application(), CancellationToken.None);
+                await server.StartAsync(new Application(loggerFactory), CancellationToken.None);
                 Console.ReadLine();
             }
         }
