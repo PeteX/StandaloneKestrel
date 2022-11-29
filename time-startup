@@ -1,5 +1,5 @@
 #!/bin/sh
 
 trap "trap exit TERM; trap EXIT; pkill --pgroup 0" INT TERM EXIT
-./bin/Release/net6.0/StandaloneKestrel &
+./bin/Release/net7.0/linux-x64/StandaloneKestrel &
 while ! curl -s http://localhost:8080; do true; done
