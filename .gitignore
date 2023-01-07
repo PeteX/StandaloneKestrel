@@ -1,2 +1,6 @@
 /bin/
 /obj/
+
+/localhost.crt
+/localhost.key
+/localhost.pfx

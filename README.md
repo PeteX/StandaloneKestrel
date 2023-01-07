@@ -24,3 +24,22 @@ dotnet publish -r linux-x64 -c Release
 (This has only been tested on Linux.  If you are not on Linux, you could try building an executable, but you will need to substitute a different runtime identifier in the above command.)
 
 You will see a few warnings during compilation, but as far as I can tell, the resulting executable works well.  The executable is about 46M with debug information, 15M stripped.  After the process has been invoked (using both HTTP GET and websockets) the resident memory is about 22M, far better than even the simplest ASP.NET application, and similar to Go.
+
+TLS
+===
+
+The server now supports TLS.  If you store a PKCS12 certificate in `localhost.pfx`, the server will listen for https connections on port 8080, rather than plain http.
+
+For testing purposes (and *only* testing purposes) you can create a suitable self-signed certificate like this:
+
+```
+openssl req -x509 -newkey rsa:2048 -sha256 -keyout localhost.key -out localhost.crt -subj '/CN=test.com' -nodes
+openssl pkcs12 -export -name localhost -out localhost.pfx -inkey localhost.key -in localhost.crt -passout pass:
+```
+
+To test the server, you will now need these commands:
+
+```
+curl --insecure https://localhost:8080
+wscat --no-check -c wss://desktop.chown.org.uk:8080/ws
+```
