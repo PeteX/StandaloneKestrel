@@ -12,10 +12,12 @@ dotnet publish -c Release
 time ./time-startup
 ```
 
-.NET 7
+.NET 8
 ======
 
-I've been maintaining this package on and off since .NET Core 2.1.  For most of this time, it has just been an interesting hack, but now it has a potential real-world use.  .NET 7 supports [AOT compilation to a single executable](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/), but this is only for simple console applications, not for ASP.NET.  Standalone Kestrel, though, works in this mode.  You can build it like this:
+On .NET 7, the techniques used here were the only way to use Kestrel with native AOT compilation.  With .NET 8, the [minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview?view=aspnetcore-8.0) are supported with native AOT.  For most projects, this will be a better option.  If you still want to use Kestrel directly, this project may be useful.
+
+As with .NET 7, you can build an AOT version if that is useful:
 
 ```
 dotnet publish -r linux-x64 -c Release
@@ -23,7 +25,7 @@ dotnet publish -r linux-x64 -c Release
 
 (This has only been tested on Linux.  If you are not on Linux, you could try building an executable, but you will need to substitute a different runtime identifier in the above command.)
 
-You will see a few warnings during compilation, but as far as I can tell, the resulting executable works well.  The executable is about 46M with debug information, 15M stripped.  After the process has been invoked (using both HTTP GET and websockets) the resident memory is about 22M, far better than even the simplest ASP.NET application, and similar to Go.
+Unfortunately, with .NET 8, `UseHttps` has a dependency on the `KestrelMetrics` class, which is internal.  Instances of this class are created by reflection, and there is a `TrimmerRootDescriptor` in the `.csproj` file to ensure that all the necessary code is included in the final executable.  This is unsatisfactory because it depends on the internal design of Kestrel.  Also, the `dotnet publish` step displays trim warnings for this class even though they are supposed to be turned off; presumably this is a bug in the .NET SDK.  If you have a better solution for any of this, please let me know!
 
 TLS
 ===

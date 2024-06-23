@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="Microsoft.AspNetCore.Server.Kestrel.Core">
+    <type fullname="Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelMetrics" preserve="all" />
+  </assembly>
+</linker>

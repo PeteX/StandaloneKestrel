@@ -1,4 +1,5 @@
-﻿using System.Net.WebSockets;
+﻿using System.Diagnostics.Metrics;
+using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -9,18 +10,12 @@ using Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 
 namespace Kestrel;
 
-class Context
+class Context(IFeatureCollection features)
 {
-    public IFeatureCollection features;
-
-    public Context(IFeatureCollection features)
-    {
-        this.features = features;
-    }
+    public IFeatureCollection features = features;
 }
 
 class Application : IHttpApplication<Context>
@@ -58,14 +53,23 @@ class Application : IHttpApplication<Context>
             await socket.SendAsync(new ArraySegment<byte>(message), WebSocketMessageType.Text, true,
                 CancellationToken.None);
 
-            await socket.ReceiveAsync(new byte[4096], CancellationToken.None);
+            message = new byte[4096];
+            var received = await socket.ReceiveAsync(message, CancellationToken.None);
+            if (received.MessageType == WebSocketMessageType.Text)
+                Console.WriteLine($"Received: {Encoding.ASCII.GetString(message, 0, received.Count)}");
         }
         else
         {
-            httpContext.Response.Headers.Add("Content-Type", new StringValues("text/plain"));
+            httpContext.Response.Headers.ContentType = "text/plain";
             await httpContext.Response.Body.WriteAsync(Encoding.ASCII.GetBytes("hello world\n"));
         }
     }
+}
+
+class MeterFactory : IMeterFactory
+{
+    public Meter Create(MeterOptions options) => new(options);
+    public void Dispose() { }
 }
 
 class AppServices : IServiceProvider
@@ -74,6 +78,11 @@ class AppServices : IServiceProvider
     {
         if (serviceType == typeof(ILoggerFactory))
             return new NullLoggerFactory();
+
+        if (serviceType.FullName == "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelMetrics")
+#pragma warning disable IL2067
+            return Activator.CreateInstance(serviceType, new MeterFactory());
+#pragma warning restore IL2067
 
         return null;
     }

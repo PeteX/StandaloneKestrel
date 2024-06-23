@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/kestrel.csproj"
+                "${workspaceFolder}/StandaloneKestrel.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
